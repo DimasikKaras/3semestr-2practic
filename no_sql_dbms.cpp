@@ -55,21 +55,7 @@ int main(int argc, char* argv[]) {
 
         HashMap map(3);
 
-        // Открытие коллекции и загрузка её в hashmap
-        json docs = json::array();
-        if (ifstream file(filename); file.is_open()) {
-            try {
-                file >> docs;
-            } catch (...) {
-                cerr << "Файл повреждён — начинаем с нуля." << endl;
-            }
-            file.close();
-        }
-
-        for (const auto& doc : docs) {
-            string id = doc["_id"];
-            map.hashMapInsert(id, doc);
-        }
+        map.loadFromFile(filename);
 
         if (argc == 3) {
             if (string(argv[2]).empty()) throw runtime_error("пустой аргумент запроса");

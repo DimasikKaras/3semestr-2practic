@@ -99,6 +99,22 @@ void HashMap::saveToFile(const string& filename) const {
     file << data.dump(4);
 }
 
+void HashMap::loadFromFile(const std::string &filename) {
+    json docs = json::array();
+    if (ifstream file(filename); file.is_open()) {
+        try {
+            file >> docs;
+        } catch (...) {
+            cerr << "Файл повреждён — начинаем с нуля." << endl;
+        }
+        file.close();
+    }
+    for (const auto& doc : docs) {
+        string id = doc["_id"];
+        hashMapInsert(id, doc);
+    }
+}
+
 void HashMap::rehash() {
     const size_t oldCapacity = capacity;
     HashMapNode* oldTable = table;

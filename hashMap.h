@@ -32,6 +32,7 @@ public:
     [[nodiscard]]MyVector<std::pair<std::string, nlohmann::json>> items() const;
 
     void saveToFile(const std::string& filename) const;
+    void loadFromFile(const std::string& filename);
     void print() const;
     void rehash();
     std::pair<std::string, std::string> searchByKey(const std::string& key) const;
