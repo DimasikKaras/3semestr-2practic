@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <thread>
-#include <vector>
 #include <mutex>
 #include <cstring>
 #include <sstream>
@@ -14,10 +13,20 @@ const int PORT = 8080;
 const int BUFFER_SIZE = 8192;
 const int MAX_CLIENTS = 100;
 
-std::mutex cout_mutex; // Для безопасного вывода в консоль
+std::mutex MapMutex;
+std::map<std::string, std::unique_ptr<std::mutex>> databaseMutex;
 
+std::mutex cout_mutex;
 
-// Вспомогательная функция для преобразования thread::id в строку
+std::mutex& getDbMutex(const std::string& dbName) {
+    std::lock_guard<std::mutex> lock(MapMutex);
+
+    if (databaseMutex.find(dbName) == databaseMutex.end()) {
+        databaseMutex[dbName] = std::make_unique<std::mutex>();
+    }
+    return *databaseMutex[dbName];
+}
+
 std::string thread_id_to_string(std::thread::id id) {
     std::stringstream ss;
     ss << id;
@@ -84,6 +93,9 @@ void handleClient(int clientSocket, sockaddr_in clientAddress) {
             nlohmann::json data = nlohmann::json::array();
 
             nlohmann::json input;
+
+            std::mutex& dbMutex = getDbMutex(database);
+            std::lock_guard<std::mutex> db_lock(dbMutex);
             map.loadFromFile(filename);
             if (op == "insert") {
                 if (Database::insertDoc(&map, inMsg["data"].dump())) {
