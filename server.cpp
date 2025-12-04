@@ -37,8 +37,9 @@ void handleClient(int clientSocket, sockaddr_in clientAddress) {
     }
 
     char buffer[BUFFER_SIZE];
-    HashMap map(3);
+
     while (true) {
+        HashMap map(3);
         memset(buffer, 0, BUFFER_SIZE);
         int bytesRead = recv(clientSocket, buffer, BUFFER_SIZE - 1, 0);
 
@@ -52,75 +53,91 @@ void handleClient(int clientSocket, sockaddr_in clientAddress) {
             }
             break;
         }
+        try {
+            nlohmann::json inMsg = nlohmann::json::parse(buffer);
+            std::string database = inMsg["database"];
+            std::string collection = inMsg["collection"];
+            std::string op = inMsg["operation"];
 
-        nlohmann::json inMsg = nlohmann::json::parse(buffer);
-        std::string database = inMsg["database"];
-        std::string collection = inMsg["collection"];
-        std::string op = inMsg["operation"];
+            {
+                std::lock_guard<std::mutex> lock(cout_mutex);
+                char clientIP[INET_ADDRSTRLEN];
+                inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
+                std::cout << "[" << clientIP << ", поток: "<< threadId << "] " << "Получено: \n{" << std::endl;
+                std::cout << "\t\"database\": " << database << std::endl;
+                std::cout << "\t\"collection\": " << collection << std::endl;
+                std::cout << "\t\"operation\": " << op << std::endl;
+                if (op == "insert") {
+                    std::cout << "\t\"data\": " << inMsg["data"].dump(15) << std::endl;
+                } else {
+                    std::cout << "\t\"query\": " << inMsg["query"].dump(10) << std::endl;
+                }
+                std::cout << "}" << std::endl;
+            }
 
-        {
-            std::lock_guard<std::mutex> lock(cout_mutex);
-            char clientIP[INET_ADDRSTRLEN];
-            inet_ntop(AF_INET, &clientAddress.sin_addr, clientIP, INET_ADDRSTRLEN);
-            std::cout << "[" << clientIP << ", поток: "<< threadId << "] " << "Получено: \n{" << std::endl;
-            std::cout << "\t\"database\": " << database << std::endl;
-            std::cout << "\t\"collection\": " << collection << std::endl;
-            std::cout << "\t\"operation\": " << op << std::endl;
+
+            std::filesystem::create_directories(database);
+            std::string filename = database + "/" + collection + ".json";
+
+            bool status = true;
+            int inputCount;
+            nlohmann::json data = nlohmann::json::array();
+
+            nlohmann::json input;
+            map.loadFromFile(filename);
             if (op == "insert") {
-                std::cout << "\t\"data\": " << inMsg["data"].dump(15) << std::endl;
-            } else {
-                std::cout << "\t\"query\": " << inMsg["query"].dump(10) << std::endl;
+                if (Database::insertDoc(&map, inMsg["data"].dump())) {
+                    map.saveToFile(filename);
+                    status = true;
+                } else {
+                    status = false;
+                }
             }
-            std::cout << "}" << std::endl;
+            else if (op == "find") {
+                auto [count, docs] = Database::findDoc(&map, inMsg["query"].dump());
+                if (count == 0) {
+                    status = false;
+                    input["massage"] = "no documents found";
+                }
+                else {
+                    status = true;
+                    data = docs;
+                    inputCount = count;
+                    input["massage"] = std::to_string(count) + " documents found";
+                }
+            } else if (op == "delete") {
+                auto [count, docs] = Database::deleteDoc(&map, inMsg["query"].dump());
+                if (count == 0) {
+                    status = false;
+                    input["massage"] = "no documents to delete were found";
+                }
+                else {
+                    status = true;
+                    data = docs;
+                    inputCount = count;
+                    map.saveToFile(filename);
+                    input["massage"] = std::to_string(count) + " documents deleted";
+                }
+            }
+            input["status"] = status ? "success" : "error";
+            if (!input.contains("message")) {
+                input["message"] = status ? "operation is completed" : "operation failed";
+            }
+            if (op != "insert" && status) {
+                input["data"] = data;
+                input["count"] = inputCount;
+            }
+            std::string response = input.dump();
+
+            send(clientSocket, response.c_str(), response.length(), 0);
+        } catch (const std::exception& e) {
+            nlohmann::json errorResponse;
+            errorResponse["status"] = "error";
+            errorResponse["message"] = "JSON parsing error: " + std::string(e.what());
+            std::string response = errorResponse.dump();
+            send(clientSocket, response.c_str(), response.length(), 0);
         }
 
-
-        std::filesystem::create_directories(database);
-        std::string filename = database + "/" + collection + ".json";
-
-        bool status = true;
-        int inputCount;
-        nlohmann::json data = nlohmann::json::array();
-
-        map.loadFromFile(filename);
-        if (op == "insert") {
-            if (Database::insertDoc(&map, inMsg["data"].dump())) {
-                map.saveToFile(filename);
-                status = true;
-            } else {
-                status = false;
-            }
-        }
-        else if (op == "find") {
-            auto [count, docs] = Database::findDoc(&map, inMsg["query"].dump());
-            if (count == 0) status = false;
-            else {
-                status = true;
-                data = docs;
-                inputCount = count;
-            }
-        } else if (op == "delete") {
-            auto [count, docs] = Database::deleteDoc(&map, inMsg["query"].dump());
-            if (count == 0) status = false;
-            else {
-                status = true;
-                data = docs;
-                inputCount = count;
-                map.saveToFile(filename);
-            }
-        }
-
-        nlohmann::json input;
-        input["status"] = status ? "success" : "error";
-        input["message"] = "message";
-        if (op != "insert" && status) {
-            input["data"] = data;
-            input["count"] = inputCount;
-        }
-
-        std::string response = input.dump();
-
-        send(clientSocket, response.c_str(), response.length(), 0);
 
         if (strcmp(buffer, "exit") == 0) {
             std::lock_guard<std::mutex> lock(cout_mutex);
@@ -184,7 +201,7 @@ int main() {
         // Принятие подключения
         sockaddr_in clientAddress{};
         socklen_t clientSize = sizeof(clientAddress);
-        int clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddress, &clientSize);
+        int clientSocket = accept(serverSocket, reinterpret_cast<struct sockaddr *>(&clientAddress), &clientSize);
 
         if (clientSocket < 0) {
             std::cerr << "Ошибка при принятии подключения" << std::endl;
