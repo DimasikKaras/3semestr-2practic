@@ -96,52 +96,47 @@ bool Database::matchesQuery(const nlohmann::json &doc, const nlohmann::json &que
     return true;
 }
 
-void Database::insertDoc(HashMap* map, const std::string& jsonCommand) {
+bool Database::insertDoc(HashMap* map, const std::string& jsonCommand) {
     json doc = json::parse(jsonCommand);
     string id = generateId();
     doc["_id"] = id;
     map->hashMapInsert(id, doc);
-    cout << "Document inserted successfully." << endl;
+    return true;
 }
 
-void Database::findDoc(const HashMap *map, const std::string &jsonCommand) {
+pair<int, json> Database::findDoc(const HashMap *map, const std::string &jsonCommand) {
+    json result = json::array();
     const json query = json::parse(jsonCommand);
     const auto allItems = map->items();
-    bool found = false;
-    int count = 1;
-
-    cout << "Found:" << endl;
+    int count = 0;
 
     for (const auto& [fst, snd] : allItems) {
         if (matchesQuery(snd, query)) {
             auto p = map->searchByKey(fst);
             if (!p.first.empty() && !p.second.empty()) {
-                cout << count++ << ". " << p.second << endl;
+                result.push_back(snd);
+                count+= 1;
             }
-            found = true;
         }
     }
-    if (!found) {
-        cout << "No documents found." << endl;
-    }
+    return {count, result};
 }
 
-void Database::deleteDoc(HashMap *map, const std::string &jsonCommand) {
+pair<int, json> Database::deleteDoc(HashMap *map, const std::string &jsonCommand) {
+    json result = json::array();
     const json query = json::parse(jsonCommand);
     const auto allItems = map->items();
-    bool deleted = false;
+    int count = 0;
 
-    for (const auto &[fst, snd] : allItems) {
+    for (const auto& [fst, snd] : allItems) {
         if (matchesQuery(snd, query)) {
             if (map->deleteById(fst)) {
-                cout << "Удален документ: " << fst << endl;
-                deleted = true;
+                result.push_back(snd);
+                count+= 1;
             }
         }
     }
-    if (!deleted) {
-        cout << "Документы для удаления не найдены." << endl;
-    }
+    return {count, result};
 }
 
 

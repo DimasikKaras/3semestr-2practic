@@ -15,11 +15,11 @@ private:
     static bool matchesCondition(const nlohmann::json& doc, const std::string& field, const nlohmann::json& condition);
     static bool matchesQuery(const nlohmann::json& doc, const nlohmann::json& query);
 public:
-    static void insertDoc(HashMap* map, const std::string& jsonCommand);
+    static bool insertDoc(HashMap* map, const std::string& jsonCommand);
 
-    static void findDoc(const HashMap* map, const std::string& jsonCommand);
+    static std::pair<int, nlohmann::json> findDoc(const HashMap *map, const std::string &jsonCommand);
 
-    static void deleteDoc(HashMap* map, const std::string& jsonCommand);
+    static std::pair<int, nlohmann::json>  deleteDoc(HashMap* map, const std::string& jsonCommand);
 
 };
 

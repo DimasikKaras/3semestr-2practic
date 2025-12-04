@@ -69,7 +69,7 @@ void handleClient(int clientSocket, sockaddr_in clientAddress) {
             if (op == "insert") {
                 std::cout << "\t\"data\": " << inMsg["data"].dump(15) << std::endl;
             } else {
-                std::cout << "\t\"query\": " << inMsg["query"].dump(15) << std::endl;
+                std::cout << "\t\"query\": " << inMsg["query"].dump(10) << std::endl;
             }
             std::cout << "}" << std::endl;
         }
@@ -83,9 +83,20 @@ void handleClient(int clientSocket, sockaddr_in clientAddress) {
             Database::insertDoc(&map, inMsg["data"].dump());
             map.saveToFile(filename);
         }
-        if (op == "find") {
-
+        else if (op == "find") {
+            auto [count, docs] = Database::findDoc(&map, inMsg["query"].dump());
+            if (count == 0) std::cout << "Ошибка" << std::endl;
+            else {
+                std::cout << docs.dump(4) << "\n\n";
+            }
+        } else if (op == "delete") {
+            auto [count, docs] = Database::findDoc(&map, inMsg["query"].dump());
+            if (count == 0) std::cout << "Ошибка" << std::endl;
+            else {
+                std::cout << docs.dump(4) << "\n\n";
+            }
         }
+
 
         // Эхо-ответ
         std::string response;
