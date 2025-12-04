@@ -11,11 +11,11 @@
 #include "Database.h"
 
 const int PORT = 8080;
-const int BUFFER_SIZE = 1024;
+const int BUFFER_SIZE = 8192;
 const int MAX_CLIENTS = 100;
 
 std::mutex cout_mutex; // Для безопасного вывода в консоль
-HashMap map(3);
+
 
 // Вспомогательная функция для преобразования thread::id в строку
 std::string thread_id_to_string(std::thread::id id) {
@@ -37,7 +37,7 @@ void handleClient(int clientSocket, sockaddr_in clientAddress) {
     }
 
     char buffer[BUFFER_SIZE];
-
+    HashMap map(3);
     while (true) {
         memset(buffer, 0, BUFFER_SIZE);
         int bytesRead = recv(clientSocket, buffer, BUFFER_SIZE - 1, 0);
@@ -78,30 +78,49 @@ void handleClient(int clientSocket, sockaddr_in clientAddress) {
         std::filesystem::create_directories(database);
         std::string filename = database + "/" + collection + ".json";
 
+        bool status = true;
+        int inputCount;
+        nlohmann::json data = nlohmann::json::array();
+
         map.loadFromFile(filename);
         if (op == "insert") {
-            Database::insertDoc(&map, inMsg["data"].dump());
-            map.saveToFile(filename);
+            if (Database::insertDoc(&map, inMsg["data"].dump())) {
+                map.saveToFile(filename);
+                status = true;
+            } else {
+                status = false;
+            }
         }
         else if (op == "find") {
             auto [count, docs] = Database::findDoc(&map, inMsg["query"].dump());
-            if (count == 0) std::cout << "Ошибка" << std::endl;
+            if (count == 0) status = false;
             else {
-                std::cout << docs.dump(4) << "\n\n";
+                status = true;
+                data = docs;
+                inputCount = count;
             }
         } else if (op == "delete") {
-            auto [count, docs] = Database::findDoc(&map, inMsg["query"].dump());
-            if (count == 0) std::cout << "Ошибка" << std::endl;
+            auto [count, docs] = Database::deleteDoc(&map, inMsg["query"].dump());
+            if (count == 0) status = false;
             else {
-                std::cout << docs.dump(4) << "\n\n";
+                status = true;
+                data = docs;
+                inputCount = count;
+                map.saveToFile(filename);
             }
         }
 
+        nlohmann::json input;
+        input["status"] = status ? "success" : "error";
+        input["message"] = "message";
+        if (op != "insert" && status) {
+            input["data"] = data;
+            input["count"] = inputCount;
+        }
 
-        // Эхо-ответ
-        std::string response;
+        std::string response = input.dump();
 
-        //send(clientSocket, response.c_str(), response.length(), 0);
+        send(clientSocket, response.c_str(), response.length(), 0);
 
         if (strcmp(buffer, "exit") == 0) {
             std::lock_guard<std::mutex> lock(cout_mutex);

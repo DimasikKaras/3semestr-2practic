@@ -8,7 +8,7 @@
 #include "nlohmann/json.hpp"
 
 int PORT;
-constexpr int BUFFER_SIZE = 1024;
+constexpr int BUFFER_SIZE = 8192;
 std::string SERVER_IP;
 std::string nameDatabase;
 
@@ -105,8 +105,9 @@ int main(int argv, char* argc[]) {
             memset(buffer, 0, BUFFER_SIZE);
             int bytesRead = recv(clientSocket, buffer, BUFFER_SIZE - 1, 0);
 
+
             if (bytesRead > 0) {
-                std::cout << "Ответ сервера: " << buffer << std::endl;
+                std::cout << "Ответ сервера: " << nlohmann::json::parse(buffer).dump(4) << std::endl;
             } else if (bytesRead == 0) {
                 std::cout << "Сервер отключился" << std::endl;
                 break;
@@ -124,4 +125,3 @@ int main(int argv, char* argc[]) {
         std::cout << "ошибка" << std::endl;
     }
 }
-INSERT mma {"name": "BOB", "age": 25}
