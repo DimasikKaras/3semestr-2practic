@@ -13,18 +13,18 @@ std::string SERVER_IP;
 std::string nameDatabase;
 
 bool isValidIP(const std::string& ip) {
-    sockaddr_in sa;
+    sockaddr_in sa{};
     return inet_pton(AF_INET, ip.c_str(), &(sa.sin_addr)) == 1;
 }
 
-int main(int argv, char* argc[]) {
+int main(const int argv, char* argc[]) {
     try {
         if (argv < 7) throw;
-        int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+        const int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
         if (clientSocket < 0) {
             std::cerr << "Ошибка создания сокета" << std::endl;
-            return 1;
         }
+
 
         if (std::string(argc[1]) == "--host" && !std::string(argc[2]).empty()) {
             if (std::string(argc[2]) == "localhost") SERVER_IP = "127.0.0.1";
@@ -103,11 +103,20 @@ int main(int argv, char* argc[]) {
             send(clientSocket, message.c_str(), message.length(), 0);
             // Получение ответа от сервера
             memset(buffer, 0, BUFFER_SIZE);
-            int bytesRead = recv(clientSocket, buffer, BUFFER_SIZE - 1, 0);
+            const int bytesRead = recv(clientSocket, buffer, BUFFER_SIZE - 1, 0);
 
 
             if (bytesRead > 0) {
-                std::cout << "Ответ сервера: " << nlohmann::json::parse(buffer).dump(4) << std::endl;
+                std::cout << "Ответ сервера:{" << std::endl;
+                nlohmann::json response = nlohmann::json::parse(buffer);
+                std::cout << "\t\"status\": " << response["status"] << std::endl;
+                std::cout << "\t\"message\": " << response["message"] << std::endl;
+                if (response["status"] == "success" && cmd != "INSERT") {
+                    std::cout << "\t\"data\": " << response["data"].dump(15) << std::endl;
+                    std::cout << "\t\"count : " << response["count"] << std::endl;
+                }
+
+
             } else if (bytesRead == 0) {
                 std::cout << "Сервер отключился" << std::endl;
                 break;
@@ -121,8 +130,230 @@ int main(int argv, char* argc[]) {
         close(clientSocket);
         std::cout << "Клиент завершил работу" << std::endl;
         return 0;
-    }catch (...) {
+    }catch (const std::exception& e) {
+        std::cout << e.what() << std::endl;
         std::cout << "ошибка" << std::endl;
     }
 }
 
+
+/*INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}
+INSERT ab {"name": "Anna", "age": 25}*/
