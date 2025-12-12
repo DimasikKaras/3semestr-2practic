@@ -1,7 +1,3 @@
-//
-// Created by dimasik on 20.11.2025.
-//
-
 #ifndef INC_1PRAKA_MYVECTOR_H
 #define INC_1PRAKA_MYVECTOR_H
 

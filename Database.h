@@ -1,5 +1,6 @@
 #ifndef PROVERKA_DATABASE_H
 #define PROVERKA_DATABASE_H
+#include <chrono>
 #include <fstream>
 #include <random>
 #include <filesystem>
